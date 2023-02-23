@@ -2,11 +2,21 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.0.2'
 	id 'io.spring.dependency-management' version '1.1.0'
+	id 'com.github.node-gradle.node' version '3.2.1'
 }
 
 group = 'com.hmgtemp'
 version = '0.0.1-SNAPSHOT'
 sourceCompatibility = '17'
+
+def webappDir = "$projectDir/frontend"
+
+node {
+	version = '12.22.12'
+	npmVersion = '6.14.16'
+	download = true
+	nodeProjectDir = file("$webappDir")
+}
 
 configurations {
 	compileOnly {
@@ -23,6 +33,50 @@ dependencies {
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+sourceSets {
+	main {
+		resources {
+			srcDirs = ["$webappDir/build", "$projectDir/src/main/resources"]
+		}
+	}
+}
+
+// processResources 아래 협의 후 수정
+processResources {
+	dependsOn "copyWebApp"
+}
+
+tasks.register("copyWebApp", Copy) {
+	dependsOn "buildReact"
+	from "$webappDir/build"
+	into "$projectDir/src/main/resources/static"
+}
+
+tasks.register("buildReact", Exec) {
+	dependsOn "installReact"
+	workingDir "$webappDir"
+	inputs.dir "$webappDir"
+	group = BasePlugin.BUILD_GROUP
+	if (System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')) {
+		commandLine "npm.cmd", "run-script", "build"
+	} else {
+		commandLine "npm", "run-script", "build"
+	}
+}
+
+tasks.register("installReact", Exec) {
+	workingDir "$webappDir"
+	inputs.dir "$webappDir"
+	group = BasePlugin.BUILD_GROUP
+	if (System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')) {
+		commandLine "npm.cmd", "audit", "fix"
+		commandLine 'npm.cmd', 'install'
+	} else {
+		commandLine "npm", "audit", "fix"
+		commandLine 'npm', 'install'
+	}
 }
 
 tasks.named('test') {
