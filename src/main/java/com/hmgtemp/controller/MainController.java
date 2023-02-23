@@ -6,9 +6,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @Controller
 public class MainController {
 
-    @RequestMapping("/api")
-    public String landingPage() {
-        return "index";
+    @RequestMapping("/")
+    public String root() {
+        return "index.html";
     }
 
 //    @RequestMapping("/hello")
